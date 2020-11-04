@@ -1,5 +1,5 @@
 module.exports = [
-    'ADMINISTRATOR',
-    'MEMBER',
-    'GUEST'
+  'ADMINISTRATOR',
+  'MEMBER',
+  'GUEST'
 ]
