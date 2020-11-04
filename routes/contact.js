@@ -10,7 +10,7 @@ router.post('/', (req, res) => {
 		message: Joi.string().min(10).required()
 	})
 
-	const { error } = schema.validate(req.body)
+	const { error } = schema.validate(req.body, { abortEarly: false })
 
 	if (error) {
 		return res.status(422).json({ errors: error.details })
@@ -28,7 +28,7 @@ router.post('/', (req, res) => {
 
 	const params = {
 		Destination: {
-			ToAddresses: ['hello@ds-network.be']
+			ToAddresses: [process.env.MAIL_FROM_ADDRESS]
 		},
 		ReplyToAddresses: [req.body.email],
 		Message: {
@@ -37,7 +37,7 @@ router.post('/', (req, res) => {
 			},
 			Subject: { Data: `Message from ${req.body.name}` }
 		},
-		Source: 'hello@ds-network.be'
+		Source: process.env.MAIL_FROM_ADDRESS
 	}
 
 	ses.sendEmail(params, (err) => {

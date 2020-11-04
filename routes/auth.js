@@ -8,6 +8,7 @@ router.post('/', passport.authenticate('local'), (req, res) => {
 		_id: req.user.id,
 		name: req.user.name,
 		email: req.user.email,
+		role: req.user.role,
 		date: req.user.date
 	}
 
@@ -19,6 +20,7 @@ router.get('/', authenticated, (req, res) => {
 		_id: req.user.id,
 		name: req.user.name,
 		email: req.user.email,
+		role: req.user.role,
 		date: req.user.date
 	}
 	

@@ -3,8 +3,11 @@ const router = express.Router()
 const User = require('../models/users')
 const bcrypt = require('bcrypt')
 const authenticated = require('../middleware/authenticated')
+const checkRole = require('../middleware/check-role')
+const Joi = require('joi')
+const roles = require('../models/roles')
 
-router.get('/', authenticated, async (req, res) => {
+router.get('/', [authenticated, checkRole('ADMINISTRATOR')], async (req, res) => {
 	try {
 		const users = await User.find()
 
@@ -13,6 +16,7 @@ router.get('/', authenticated, async (req, res) => {
 				_id: user._id,
 				name: user.name,
 				email: user.email,
+				role: user.role,
 				date: user.date
 			}
 		}))
@@ -21,7 +25,20 @@ router.get('/', authenticated, async (req, res) => {
 	}
 })
 
-router.post('/', authenticated, async (req, res) => {
+router.post('/', [authenticated, checkRole('ADMINISTRATOR')], async (req, res) => {
+	const schema = Joi.object({
+		name: Joi.string().min(3).required(),
+		email: Joi.string().email().required(),
+		password: Joi.string().min(8).required(),
+		role: Joi.string().valid(...roles).required()
+	})
+
+	const { error } = schema.validate(req.body, { abortEarly: false })
+
+	if (error) {
+		return res.status(422).json({ errors: error.details })
+	}
+
 	let hash;
 
 	try {
@@ -33,7 +50,8 @@ router.post('/', authenticated, async (req, res) => {
 	const payload = {
 		name: req.body.name,
 		email: req.body.email,
-		password: hash
+		password: hash,
+		role: req.body.role,
 	}
 
 	const user = new User(payload)
@@ -45,6 +63,7 @@ router.post('/', authenticated, async (req, res) => {
 			_id: newUser._id,
 			name: newUser.name,
 			email: newUser.email,
+			role: newUser.role,
 			date: newUser.date
 		})
 	} catch (err) {
@@ -52,16 +71,30 @@ router.post('/', authenticated, async (req, res) => {
 	}
 })
 
-router.get('/:id', [authenticated, getUser], (req, res) => {
+router.get('/:id', [authenticated, checkRole('ADMINISTRATOR'), getUser], (req, res) => {
 	res.json({
 		_id: res.user._id,
 		name: res.user.name,
 		email: res.user.email,
+		role: res.user.role,
 		date: res.user.date
 	})
 })
 
-router.patch('/:id', [authenticated, getUser], async (req, res) => {
+router.patch('/:id', [authenticated, checkRole('ADMINISTRATOR'), getUser], async (req, res) => {
+	const schema = Joi.object({
+		name: Joi.string().min(3),
+		email: Joi.string().email(),
+		password: Joi.string().min(8),
+		role: Joi.string().valid(...roles).optional()
+	})
+
+	const { error } = schema.validate(req.body, { abortEarly: false })
+
+	if (error) {
+		return res.status(422).json({ errors: error.details })
+	}
+
 	if (req.body.name !== undefined) {
 		res.user.name = req.body.name
 	}
@@ -82,6 +115,10 @@ router.patch('/:id', [authenticated, getUser], async (req, res) => {
 		res.user.password = hash
 	}
 
+	if (req.body.role !== undefined) {
+		res.user.role = req.body.role
+	}
+
 	try {
 		const updatedUser = await res.user.save()
 
@@ -89,6 +126,7 @@ router.patch('/:id', [authenticated, getUser], async (req, res) => {
 			_id: updatedUser._id,
 			name: updatedUser.name,
 			email: updatedUser.email,
+			role: updatedUser.role,
 			date: updatedUser.date
 		})
 	} catch (err) {
@@ -96,7 +134,7 @@ router.patch('/:id', [authenticated, getUser], async (req, res) => {
 	}
 })
 
-router.delete('/:id', [authenticated, getUser], async (req, res) => {
+router.delete('/:id', [authenticated, checkRole('ADMINISTRATOR'), getUser], async (req, res) => {
 	try {
 		await res.user.remove()
 

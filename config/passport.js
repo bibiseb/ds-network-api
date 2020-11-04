@@ -70,7 +70,8 @@ module.exports = {
 					const payload = {
 						name: profile.displayName,
 						email,
-						password: hash
+						password: hash,
+						role: 'GUEST'
 					}
 
 					const user = new User(payload)

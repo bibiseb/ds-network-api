@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const Todo = require('../models/todos')
 const authenticated = require('../middleware/authenticated')
+const checkRole = require('../middleware/check-role')
 const Joi = require('joi')
 
 router.get('/', async (req, res) => {
@@ -14,13 +15,13 @@ router.get('/', async (req, res) => {
 	}
 })
 
-router.post('/', authenticated, async (req, res) => {
+router.post('/', [authenticated, checkRole('MEMBER', 'ADMINISTRATOR')], async (req, res) => {
 	const schema = Joi.object({
 		name: Joi.string().min(3).required(),
 		description: Joi.string().allow('')
 	})
 
-	const { error } = schema.validate(req.body)
+	const { error } = schema.validate(req.body, { abortEarly: false })
 
 	if (error) {
 		return res.status(422).json({ errors: error.details })
@@ -44,13 +45,13 @@ router.get('/:id', getTodo, (req, res) => {
 	res.json(res.todo)
 })
 
-router.patch('/:id', [authenticated, getTodo], async (req, res) => {
+router.patch('/:id', [authenticated, checkRole('ADMINISTRATOR'), getTodo], async (req, res) => {
 	const schema = Joi.object({
 		name: Joi.string().min(3),
 		description: Joi.string().allow('')
 	})
 
-	const { error } = schema.validate(req.body)
+	const { error } = schema.validate(req.body, { abortEarly: false })
 
 	if (error) {
 		return res.status(422).json({ errors: error.details })
@@ -73,7 +74,7 @@ router.patch('/:id', [authenticated, getTodo], async (req, res) => {
 	}
 })
 
-router.delete('/:id', [authenticated, getTodo], async (req, res) => {
+router.delete('/:id', [authenticated, checkRole('ADMINISTRATOR'), getTodo], async (req, res) => {
 	try {
 		await res.todo.remove()
 
