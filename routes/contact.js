@@ -16,9 +16,10 @@ router.post('/', (req, res) => {
 		return res.status(422).json({ errors: error.details })
 	}
 
-	const options = { region: process.env.AWS_REGION }
+	const options = {}
 
 	if (process.env.APP_ENV === 'development') {
+		options.region = process.env.AWS_REGION
 		options.accessKeyId = process.env.AWS_ACCESS_KEY_ID
 		options.secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
 	}
