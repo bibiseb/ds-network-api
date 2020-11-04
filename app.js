@@ -40,10 +40,12 @@ app.use(
 const todosRouter = require('./routes/todos')
 const usersRouter = require('./routes/users')
 const authRouter = require('./routes/auth')
+const contactRouter = require('./routes/contact')
 
 app.use('/todos', todosRouter)
 app.use('/users', usersRouter)
 app.use('/auth', authRouter)
+app.use('/contact', contactRouter)
 
 app.get('/', (req, res) => {
 	res.json({ message: 'Hello word!' })
