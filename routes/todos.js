@@ -29,7 +29,8 @@ router.post('/', [authenticated, checkRole('MEMBER', 'ADMINISTRATOR')], async (r
 
   const todo = new Todo({
     name: req.body.name,
-    description: req.body.description
+    description: req.body.description,
+    complete: false
   })
 
   try {
@@ -48,7 +49,8 @@ router.get('/:id', getTodo, (req, res) => {
 router.patch('/:id', [authenticated, checkRole('ADMINISTRATOR'), getTodo], async (req, res) => {
   const schema = Joi.object({
     name: Joi.string().min(3),
-    description: Joi.string().allow('')
+    description: Joi.string().allow(''),
+    complete: Joi.boolean()
   })
 
   const { error } = schema.validate(req.body, { abortEarly: false })
@@ -63,6 +65,10 @@ router.patch('/:id', [authenticated, checkRole('ADMINISTRATOR'), getTodo], async
 
   if (req.body.description !== undefined) {
     res.todo.description = req.body.description
+  }
+
+  if (req.body.complete !== undefined) {
+    res.todo.complete = req.body.complete
   }
 
   try {

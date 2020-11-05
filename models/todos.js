@@ -9,6 +9,10 @@ const schema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  complete: {
+    type: Boolean,
+    default: false
+  },
   date: {
     type: Date,
     required: true,
