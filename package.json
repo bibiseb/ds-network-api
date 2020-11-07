@@ -10,6 +10,7 @@
   },
   "main": "lambda.js",
   "dependencies": {
+    "@paypal/checkout-server-sdk": "^1.0.2",
     "aws-sdk": "^2.784.0",
     "aws-serverless-express": "^3.3.8",
     "bcrypt": "^5.0.0",

@@ -41,5 +41,9 @@ module.exports = {
     },
     mail: {
         fromAddress: process.env.MAIL_FROM_ADDRESS || 'hello@domain'
+    },
+    paypal: {
+        clientId: process.env.PAYPAL_CLIENT_ID || '',
+        clientSecret: process.env.PAYPAL_CLIENT_SECRET || ''
     }
 }

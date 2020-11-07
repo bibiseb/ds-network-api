@@ -4,6 +4,10 @@ const Video = require('../models/video')
 const authenticated = require('../middleware/authenticated')
 const checkRole = require('../middleware/check-role')
 const Joi = require('joi')
+const path = require('path')
+const fs = require('fs')
+const AWS = require('aws-sdk')
+const Config = require('../config')
 
 router.get('/', async (req, res) => {
   try {
@@ -96,6 +100,47 @@ router.delete('/:id', [authenticated, checkRole('ADMINISTRATOR'), getVideo], asy
   } catch (err) {
     res.status(500).json({ message: 'Server error'})
   }
+})
+
+router.post('/:id/watch', async (req, res) => {
+    let video
+
+    try {
+        video = await Video.findById(req.params.id).exec()
+    } catch (err) {
+        return res.status(500).json({ message: 'Server error' })
+    }
+
+    const signer = new AWS.CloudFront.Signer(
+        Config.aws.cloudFront.keyPairId,
+        fs.readFileSync(
+            path.resolve(Config.aws.cloudFront.privateKeyPath)
+        )
+    )
+
+    const cookies = signer.getSignedCookie({
+        policy: JSON.stringify({
+            Statement: [
+                {
+                    Resource: Config.videos.appUrl + '/' + video.key + '/*',
+                    Condition: {
+                        DateLessThan: {
+                            'AWS:EpochTime': Math.floor(Date.now() / 1000) + 3600
+                        }
+                    }
+                }
+            ]
+        })
+    })
+
+    Object.keys(cookies).forEach((cookie) => {
+        res.cookie(cookie, cookies[cookie], {
+            domain: Config.cookie.domain,
+            secure: Config.app.env === 'production'
+        })
+    })
+
+    res.status(204).send()
 })
 
 async function getVideo(req, res, next) {
