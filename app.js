@@ -44,12 +44,14 @@ const todosRouter = require('./routes/todos')
 const usersRouter = require('./routes/users')
 const authRouter = require('./routes/auth')
 const contactRouter = require('./routes/contact')
+const videoRouter = require('./routes/videos')
 const payRouter = require('./routes/pay')
 
 app.use('/todos', todosRouter)
 app.use('/users', usersRouter)
 app.use('/auth', authRouter)
 app.use('/contact', contactRouter)
+app.use('/videos', videoRouter)
 app.use('/pay', payRouter)
 
 app.get('/', (req, res) => {
