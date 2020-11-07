@@ -1,7 +1,8 @@
 const express = require('express')
 const router = express.Router()
 const Joi = require('joi')
-const aws = require('aws-sdk')
+const AWS = require('aws-sdk')
+const Config = require('../config')
 
 router.post('/', (req, res) => {
   const schema = Joi.object({
@@ -18,17 +19,17 @@ router.post('/', (req, res) => {
 
   const options = {}
 
-  if (process.env.APP_ENV === 'development') {
-    options.region = process.env.AWS_REGION
-    options.accessKeyId = process.env.AWS_ACCESS_KEY_ID
-    options.secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY
+  if (Config.app.env === 'development') {
+    options.region = Config.aws.region
+    options.accessKeyId = Config.aws.accessKeyId
+    options.secretAccessKey = Config.aws.secretAccessKey
   }
 
-  const ses = new aws.SES(options)
+  const ses = new AWS.SES(options)
 
   const params = {
     Destination: {
-      ToAddresses: [process.env.MAIL_FROM_ADDRESS]
+      ToAddresses: [Config.mail.fromAddress]
     },
     ReplyToAddresses: [req.body.email],
     Message: {
@@ -37,7 +38,7 @@ router.post('/', (req, res) => {
       },
       Subject: { Data: `Message from ${req.body.name}` }
     },
-    Source: process.env.MAIL_FROM_ADDRESS
+    Source: Config.mail.fromAddress
   }
 
   ses.sendEmail(params, (err) => {

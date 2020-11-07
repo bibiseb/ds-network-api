@@ -4,6 +4,7 @@ const GoogleStrategy = require('passport-google-oauth').OAuth2Strategy
 const User = require('../models/users')
 const bcrypt = require('bcrypt')
 const randomString = require('../utils/random-string')
+const Config = require('../config')
 
 module.exports = {
   config() {
@@ -44,9 +45,9 @@ module.exports = {
     ))
 
     passport.use(new GoogleStrategy({
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CLIENT_CALLBACK_URL
+      clientID: Config.google.clientId,
+      clientSecret: Config.google.clientSecret,
+      callbackURL: Config.google.clientCallbackUrl
     }, async (accessToken, refreshToken, profile, done) => {
       let emails = [];
 

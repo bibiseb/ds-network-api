@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const passport = require('passport')
 const authenticated = require('../middleware/authenticated')
+const Config = require('../config')
 
 router.post('/', passport.authenticate('local'), (req, res) => {
   const data = {
@@ -38,9 +39,9 @@ router.get('/google', passport.authenticate('google', {
 
 router.get(
   '/google/callback',
-  passport.authenticate('google', { failureRedirect: process.env.FRONT_APP_URL + '/?google-auth-failure=1' }),
+  passport.authenticate('google', { failureRedirect: Config.front.appUrl + '/?google-auth-failure=1' }),
   (req, res) => {
-    res.redirect(process.env.FRONT_APP_URL)
+    res.redirect(Config.front.appUrl)
   }
 )
 
