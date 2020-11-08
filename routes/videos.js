@@ -23,8 +23,10 @@ router.post('/', [authenticated, checkRole('ADMINISTRATOR')], async (req, res) =
   const schema = Joi.object({
     name: Joi.string().min(3).required(),
     description: Joi.string().allow(''),
+    image: Joi.string().allow(''),
     poster: Joi.string().allow(''),
-    key: Joi.string().min(3).required()
+    key: Joi.string().min(3).required(),
+    price: Joi.number().min(0).required()
   })
 
   const { error } = schema.validate(req.body, { abortEarly: false })
@@ -36,8 +38,10 @@ router.post('/', [authenticated, checkRole('ADMINISTRATOR')], async (req, res) =
   const video = new Video({
     name: req.body.name,
     description: req.body.description,
+    image: req.body.image,
     poster: req.body.poster,
-    key: req.body.key
+    key: req.body.key,
+    price: req.body.price
   })
 
   try {
@@ -57,8 +61,10 @@ router.patch('/:id', [authenticated, checkRole('ADMINISTRATOR'), getVideo], asyn
   const schema = Joi.object({
     name: Joi.string().min(3),
     description: Joi.string().allow(''),
+    image: Joi.string().allow(''),
     poster: Joi.string().allow(''),
-    key: Joi.string().min(3)
+    key: Joi.string().min(3),
+    price: Joi.number().min(0)
   })
 
   const { error } = schema.validate(req.body, { abortEarly: false })
@@ -67,21 +73,11 @@ router.patch('/:id', [authenticated, checkRole('ADMINISTRATOR'), getVideo], asyn
     return res.status(422).json({ errors: error.details })
   }
 
-  if (req.body.name !== undefined) {
-    res.video.name = req.body.name
-  }
-
-  if (req.body.description !== undefined) {
-    res.video.description = req.body.description
-  }
-
-  if (req.body.poster !== undefined) {
-    res.video.poster = req.body.poster
-  }
-
-  if (req.body.key !== undefined) {
-    res.video.key = req.body.key
-  }
+  ['name', 'description', 'image', 'poster', 'key', 'price'].forEach((property) => {
+      if (req.body.hasOwnProperty(property) && req.body[property] !== undefined) {
+          res.video[property] = req.body[property]
+      }
+  })
 
   try {
     const updatedVideo = await res.video.save()
