@@ -33,15 +33,28 @@ router.delete('/', authenticated, (req, res) => {
   res.status(204).send()
 })
 
-router.get('/google', passport.authenticate('google', {
-  scope: ['openid', 'profile', 'email']
-}))
+router.get('/google', [
+  (req, res, next) => {
+    if (req.query.location) {
+      req.session.location = req.query.location
+    }
+    next()
+  },
+  passport.authenticate('google', {
+    scope: ['openid', 'profile', 'email']
+  })
+])
 
 router.get(
   '/google/callback',
   passport.authenticate('google', { failureRedirect: Config.front.appUrl + '/?google-auth-failure=1' }),
   (req, res) => {
-    res.redirect(Config.front.appUrl)
+    let redirect = Config.front.appUrl
+    if (req.session.location) {
+      redirect += req.session.location
+      delete req.session.location
+    }
+    res.redirect(redirect)
   }
 )
 

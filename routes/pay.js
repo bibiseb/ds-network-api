@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const Joi = require('joi')
 const Config = require('../config')
+const Order = require('../models/order')
 const Transaction = require('../models/transaction')
 const Paypal = require('@paypal/checkout-server-sdk');
 
@@ -21,7 +22,7 @@ router.get('/return/:id', async (req, res) => {
     const { error } = schema.validate(req.query)
 
     if (error) {
-        return res.status(400).send({ message: 'Bad request' })
+        return res.status(422).send({ message: 'Bad request' })
     }
 
     let transaction;
@@ -29,13 +30,17 @@ router.get('/return/:id', async (req, res) => {
     try {
         transaction = await Transaction.findById(req.params.id).exec()
     } catch (err) {
-        return res.status(400).json({ message: 'Invalid request'} )
+        return res.status(500).json({ message: 'Server error'} )
+    }
+
+    if (transaction === null) {
+        return res.status(404).json({ message: 'Cannot find transaction' })
     }
 
     const completedState = transaction.states.find((state) => state.state === 'COMPLETED')
 
     if (completedState) {
-        return res.status(400).json({ message: 'Payment already processed' })
+        return res.status(422).json({ message: 'Payment already processed' })
     }
 
     const data = { token: req.query.token, PayerID: req.query.PayerID, ...transaction.data }
@@ -52,16 +57,94 @@ router.get('/return/:id', async (req, res) => {
         })
         transaction.data = data
 
-        transaction = await transaction.save()
+        const newTransation = await transaction.save()
 
-        res.json(transaction)
+        const order = await Order.findById(newTransation.orderId).exec()
+
+        order.status = 'PAID'
+        order.transactionId = newTransation._id
+
+        await order.save()
+
+        let redirect = Config.front.appUrl
+
+        if (req.session.location) {
+            redirect += req.session.location
+
+            delete req.session.location
+        }
+
+        res.redirect(redirect)
     } catch (err) {
         res.status(500).json({ message: 'Server error' })
     }
 })
 
-router.get('/', async (req, res) => {
-    const transaction = new Transaction({})
+router.get('/cancel/:id', async (req, res) => {
+    let transaction;
+
+    try {
+        transaction = await Transaction.findById(req.params.id).exec()
+    } catch (err) {
+        return res.status(500).json({ message: 'Server error'} )
+    }
+
+    if (transaction === null) {
+        return res.status(404).json({ message: 'Cannot find transaction' })
+    }
+
+    const processedState = transaction.states.find((state) => state.state === 'COMPLETED' || state.state === 'CANCELLED')
+
+    if (processedState) {
+        return res.status(422).json({ message: 'Transaction processed' })
+    }
+
+    transaction.states.push({
+        state: 'CANCELLED',
+        date: Date.now()
+    })
+
+    try {
+        await transaction.save()
+    } catch (err) {
+        return res.status(500).json({ message: 'Server error' })
+    }
+
+    let redirect = Config.front.appUrl
+
+    if (req.session.location) {
+        redirect += req.session.location
+
+        delete req.session.location
+    }
+
+    res.redirect(redirect)
+})
+
+router.post('/:orderId', async (req, res) => {
+    let order
+
+    try {
+        order = await Order.findById(req.params.orderId).exec()
+    } catch (err) {
+        return res.status(500).json({ message: 'Server error' })
+    }
+
+    if (order === null) {
+        return res.status(404).json({ message: 'Cannot find order' })
+    }
+
+    if (order.sessionId !== req.sessionID) {
+        return res.status(403).send()
+    }
+
+    if (order.status === 'PAID') {
+        return res.status(423).json({ message: 'Order is already paid'})
+    }
+
+    const transaction = new Transaction({
+        orderId: order._id
+    })
 
     let newTransaction;
 
@@ -83,7 +166,7 @@ router.get('/', async (req, res) => {
             {
                 amount: {
                     currency_code: 'EUR',
-                    value: '1.00'
+                    value: order.total.toFixed(2)
                 }
             }
         ]
@@ -110,7 +193,11 @@ router.get('/', async (req, res) => {
         newTransaction = await newTransaction.save()
         const approveLink = newTransaction.data.links.find((link) => link.rel === 'approve')
 
-        res.redirect(approveLink.href)
+        if (req.body.location) {
+            req.session.location = req.body.location
+        }
+
+        res.json({ redirect: approveLink.href })
     } catch (err) {
         res.status(500).json({ message: 'Server error' })
     }

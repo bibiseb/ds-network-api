@@ -39,6 +39,7 @@ router.post('/', async (req, res) => {
   }
 
   const payload = {
+    sessionId: req.sessionID,
     items: req.body.items.map((item) => {
       const video = videos.find(video => video._id.toString() === item._id)
       return {
@@ -51,7 +52,12 @@ router.post('/', async (req, res) => {
     total: req.body.items.reduce((accumulator, item) => {
       const video = videos.find(video => video._id.toString() === item._id)
       return accumulator + (item.quantity * video.price)
-    }, 0)
+    }, 0),
+    status: 'PENDING'
+  }
+
+  if (req.user) {
+    payload.userId = req.user._id
   }
 
   const order = new Order(payload)
@@ -64,5 +70,47 @@ router.post('/', async (req, res) => {
     res.status(500).json({ message: 'Server error' })
   }
 })
+
+router.get('/:orderId', getOrder, async (req, res) => {
+  if (res.order.sessionId !== req.sessionID) {
+    return res.status(403).send()
+  }
+
+  res.json(res.order)
+})
+
+router.patch('/:orderId', getOrder, async (req, res) => {
+  if (res.order.sessionId !== req.sessionID) {
+    return res.status(403).send()
+  }
+
+  res.order.userId = req.user._id
+
+  try {
+    const newOrder = await res.order.save()
+
+    res.json(newOrder)
+  } catch (err) {
+    res.status(500).json({ message: 'Server error' })
+  }
+})
+
+async function getOrder(req, res, next) {
+  let order
+
+  try {
+    order = await Order.findById(req.params.orderId).exec()
+
+    if (order === null) {
+      return res.status(404).json({ message: 'Cannot find order' })
+    }
+  } catch (err) {
+    return res.status(500).json({ message: 'Server error' })
+  }
+
+  res.order = order
+
+  next()
+}
 
 module.exports = router;

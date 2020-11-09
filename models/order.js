@@ -1,6 +1,10 @@
 const mongoose = require('mongoose')
 
 const schema = new mongoose.Schema({
+    sessionId: {
+        type: String,
+        required: true
+    },
     userId: {
         type: mongoose.ObjectId
     },
@@ -14,6 +18,13 @@ const schema = new mongoose.Schema({
     total: {
         type: Number,
         required: true
+    },
+    status: {
+        type: String,
+        required: true
+    },
+    transactionId: {
+        type: mongoose.ObjectId
     },
     date: {
         type: Date,

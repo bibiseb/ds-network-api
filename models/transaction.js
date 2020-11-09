@@ -1,6 +1,10 @@
 const mongoose = require('mongoose')
 
 const schema = new mongoose.Schema({
+    orderId: {
+        type: mongoose.ObjectId,
+        required: true
+    },
     providerId: {
         type: String,
         default: ''
