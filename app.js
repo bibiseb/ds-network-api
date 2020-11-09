@@ -28,12 +28,12 @@ app.use(
       mongooseConnection: db
     }),
     resave: false,
-    saveUninitialized: false,
+    saveUninitialized: true,
     cookie: {
       domain: Config.cookie.domain,
       httpOnly: true,
       secure: (Config.app.env === 'production'),
-      sameSite: (Config.app.env === 'production' ? 'none' : 'lax')
+      sameSite: 'lax'
     }
   }),
   passport.initialize(),

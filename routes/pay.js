@@ -159,8 +159,8 @@ router.post('/:orderId', async (req, res) => {
     request.requestBody({
         intent: 'CAPTURE',
         application_context: {
-            return_url: 'http://localhost:3000/pay/return/' + newTransaction._id,
-            cancel_url: 'http://localhost:3000/pay/cancel/' + newTransaction._id
+            return_url: Config.app.url + '/pay/return/' + newTransaction._id,
+            cancel_url: Config.app.url + '/pay/cancel/' + newTransaction._id
         },
         purchase_units: [
             {
