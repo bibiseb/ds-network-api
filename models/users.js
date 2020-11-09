@@ -13,6 +13,17 @@ const schema = new mongoose.Schema({
     type: String,
     required: true
   },
+  videos: [{
+    _id: {
+      type: mongoose.ObjectId,
+      required: true
+    },
+    date: {
+      type: Date,
+      required: true,
+      default: Date.now
+    }
+  }],
   role: {
     type: String,
     required: true

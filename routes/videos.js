@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const Video = require('../models/video')
+const User = require('../models/users')
 const authenticated = require('../middleware/authenticated')
 const checkRole = require('../middleware/check-role')
 const Joi = require('joi')
@@ -98,13 +99,15 @@ router.delete('/:id', [authenticated, checkRole('ADMINISTRATOR'), getVideo], asy
   }
 })
 
-router.post('/:id/watch', async (req, res) => {
-    let video
+router.post('/:id/play', getVideo, async (req, res) => {
+    if (res.video.price) {
+        if (!req.user) {
+            return res.status(401).json({ message: 'Authentication required' })
+        }
 
-    try {
-        video = await Video.findById(req.params.id).exec()
-    } catch (err) {
-        return res.status(500).json({ message: 'Server error' })
+        if (!req.user.videos.find(video => video._id.toString() === res.video._id.toString())) {
+            return res.status(402).json({ message: 'Payment required' })
+        }
     }
 
     const signer = new AWS.CloudFront.Signer(
@@ -118,7 +121,7 @@ router.post('/:id/watch', async (req, res) => {
         policy: JSON.stringify({
             Statement: [
                 {
-                    Resource: Config.videos.appUrl + '/' + video.key + '/*',
+                    Resource: Config.videos.appUrl + '/' + res.video.key + '/*',
                     Condition: {
                         DateLessThan: {
                             'AWS:EpochTime': Math.floor(Date.now() / 1000) + 3600

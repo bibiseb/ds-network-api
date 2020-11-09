@@ -4,6 +4,7 @@ const Joi = require('joi')
 const Config = require('../config')
 const Order = require('../models/order')
 const Transaction = require('../models/transaction')
+const User = require('../models/users')
 const Paypal = require('@paypal/checkout-server-sdk');
 
 const environment = new Paypal.core.SandboxEnvironment(
@@ -60,6 +61,14 @@ router.get('/return/:id', async (req, res) => {
         const newTransation = await transaction.save()
 
         const order = await Order.findById(newTransation.orderId).exec()
+
+        const user = await User.findById(order.userId).exec()
+
+        order.items.forEach((item) => {
+            user.videos.push({ _id: item._id })
+        })
+
+        await user.save()
 
         order.status = 'PAID'
         order.transactionId = newTransation._id

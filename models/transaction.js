@@ -9,19 +9,17 @@ const schema = new mongoose.Schema({
         type: String,
         default: ''
     },
-    states: [
-        {
-            _id: false,
-            state: {
-                type: String,
-                required: true
-            },
-            date: {
-                type: Date,
-                required: true
-            }
+    states: [{
+        _id: false,
+        state: {
+            type: String,
+            required: true
+        },
+        date: {
+            type: Date,
+            required: true
         }
-    ],
+    }],
     date: {
         type: Date,
         required: true,

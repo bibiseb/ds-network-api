@@ -1,6 +1,7 @@
 const express = require('express')
 const router = express.Router()
 const User = require('../models/users')
+const Video = require('../models/video')
 const bcrypt = require('bcrypt')
 const authenticated = require('../middleware/authenticated')
 const checkRole = require('../middleware/check-role')
@@ -16,6 +17,7 @@ router.get('/', [authenticated, checkRole('ADMINISTRATOR')], async (req, res) =>
         _id: user._id,
         name: user.name,
         email: user.email,
+        videos: user.videos,
         role: user.role,
         date: user.date
       }
@@ -30,13 +32,26 @@ router.post('/', [authenticated, checkRole('ADMINISTRATOR')], async (req, res) =
     name: Joi.string().min(3).required(),
     email: Joi.string().email().required(),
     password: Joi.string().min(8).required(),
+    videos: Joi.array().items(Joi.object({
+      _id: Joi.string().regex(/^[0-9A-F]{24}$/i).required().external(async (value) => {
+        const video = await Video.findById(value).exec()
+        if (video !== null) {
+          return value
+        }
+        throw new Error('Cannot find related video')
+      })
+    })),
     role: Joi.string().valid(...roles).required()
   })
 
-  const { error } = schema.validate(req.body, { abortEarly: false })
-
-  if (error) {
-    return res.status(422).json({ errors: error.details })
+  try {
+    await schema.validateAsync(req.body, {abortEarly: false})
+  } catch (err) {
+    if (err instanceof Joi.ValidationError) {
+      return res.status(422).json({ errors: err.details })
+    } else {
+      return res.status(422).json({ message: err.message })
+    }
   }
 
   let hash;
@@ -51,6 +66,7 @@ router.post('/', [authenticated, checkRole('ADMINISTRATOR')], async (req, res) =
     name: req.body.name,
     email: req.body.email,
     password: hash,
+    videos: req.body.videos !== undefined ? req.body.videos : [],
     role: req.body.role,
   }
 
@@ -63,6 +79,7 @@ router.post('/', [authenticated, checkRole('ADMINISTRATOR')], async (req, res) =
       _id: newUser._id,
       name: newUser.name,
       email: newUser.email,
+      videos: newUser.videos,
       role: newUser.role,
       date: newUser.date
     })
@@ -76,6 +93,7 @@ router.get('/:id', [authenticated, checkRole('ADMINISTRATOR'), getUser], (req, r
     _id: res.user._id,
     name: res.user.name,
     email: res.user.email,
+    videos: res.user.videos,
     role: res.user.role,
     date: res.user.date
   })
@@ -86,13 +104,26 @@ router.patch('/:id', [authenticated, checkRole('ADMINISTRATOR'), getUser], async
     name: Joi.string().min(3),
     email: Joi.string().email(),
     password: Joi.string().min(8),
+    videos: Joi.array().items(Joi.object({
+      _id: Joi.string().regex(/^[0-9A-F]{24}$/i).required().external(async (value) => {
+        const video = await Video.findById(value).exec()
+        if (video !== null) {
+          return value
+        }
+        throw new Error('Cannot find related video')
+      })
+    })),
     role: Joi.string().valid(...roles).optional()
   })
 
-  const { error } = schema.validate(req.body, { abortEarly: false })
-
-  if (error) {
-    return res.status(422).json({ errors: error.details })
+  try {
+    await schema.validateAsync(req.body, { abortEarly: false })
+  } catch (err) {
+    if (err instanceof Joi.ValidationError) {
+      return res.status(422).json({ errors: err.details })
+    } else {
+      return res.status(422).json({ message: err.message })
+    }
   }
 
   if (req.body.name !== undefined) {
@@ -115,6 +146,10 @@ router.patch('/:id', [authenticated, checkRole('ADMINISTRATOR'), getUser], async
     res.user.password = hash
   }
 
+  if (req.body.videos !== undefined) {
+    res.user.videos = req.body.videos
+  }
+
   if (req.body.role !== undefined) {
     res.user.role = req.body.role
   }
@@ -126,6 +161,7 @@ router.patch('/:id', [authenticated, checkRole('ADMINISTRATOR'), getUser], async
       _id: updatedUser._id,
       name: updatedUser.name,
       email: updatedUser.email,
+      videos: updatedUser.videos,
       role: updatedUser.role,
       date: updatedUser.date
     })
