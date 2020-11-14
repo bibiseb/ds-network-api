@@ -3,7 +3,7 @@ const router = express.Router()
 const TodoController = require('../controllers/todo')
 const authenticated = require('../middleware/authenticated')
 const checkRole = require('../middleware/check-role')
-const Todo = require('../models/todos')
+const Todo = require('../models/todo')
 const getRequestedObject = require('../middleware/get-requested-object')
 
 router.get('/todos', TodoController.get)

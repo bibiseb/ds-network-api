@@ -1,4 +1,4 @@
-const Todo = require('../models/todos')
+const Todo = require('../models/todo')
 const Joi = require('joi')
 
 const TodoController = {

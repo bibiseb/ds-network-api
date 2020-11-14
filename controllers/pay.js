@@ -2,7 +2,7 @@ const Joi = require('joi')
 const Config = require('../config')
 const Order = require('../models/order')
 const Transaction = require('../models/transaction')
-const User = require('../models/users')
+const User = require('../models/user')
 const Paypal = require('@paypal/checkout-server-sdk');
 
 const environment = new Paypal.core.SandboxEnvironment(

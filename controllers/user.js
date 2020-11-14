@@ -1,4 +1,4 @@
-const User = require('../models/users')
+const User = require('../models/user')
 const Video = require('../models/video')
 const Joi = require('joi')
 const roles = require('../models/roles')

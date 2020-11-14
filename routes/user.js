@@ -3,7 +3,7 @@ const router = express.Router()
 const UserController = require('../controllers/user')
 const authenticated = require('../middleware/authenticated')
 const checkRole = require('../middleware/check-role')
-const User = require('../models/users')
+const User = require('../models/user')
 const getRequestedObject = require('../middleware/get-requested-object')
 
 router.get('/users', [authenticated, checkRole('ADMINISTRATOR')], UserController.get)
